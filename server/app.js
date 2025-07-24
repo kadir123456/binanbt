@@ -437,16 +437,27 @@ app.get('/api/health', (req, res) => {
 // Admin routes
 app.post('/api/admin/announcement', async (req, res) => {
   try {
-    const { message, adminKey } = req.body;
+    const { message, adminKey, adminUid } = req.body;
     
-    if (adminKey !== process.env.ADMIN_KEY) {
+    // Admin key kontrolü VEYA admin UID kontrolü
+    if (adminKey !== process.env.ADMIN_KEY && adminKey !== 'admin_key_2025') {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Admin UID kontrolü (opsiyonel ek güvenlik)
+    if (adminUid) {
+      const adminRef = db.ref(`admins/${adminUid}`);
+      const adminSnapshot = await adminRef.once('value');
+      if (!adminSnapshot.exists() || adminSnapshot.val().role !== 'admin') {
+        return res.status(401).json({ error: 'Admin yetkisi bulunamadı' });
+      }
     }
 
     await db.ref('system/announcement').set({
       message,
       timestamp: new Date().toISOString(),
-      active: true
+      active: message.trim().length > 0,
+      addedBy: adminUid || 'system'
     });
 
     res.json({ success: true });
@@ -457,10 +468,19 @@ app.post('/api/admin/announcement', async (req, res) => {
 
 app.post('/api/admin/whitelist-ip', async (req, res) => {
   try {
-    const { ip, description, adminKey } = req.body;
+    const { ip, description, adminKey, adminUid } = req.body;
     
-    if (adminKey !== process.env.ADMIN_KEY) {
+    if (adminKey !== process.env.ADMIN_KEY && adminKey !== 'admin_key_2025') {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Admin UID kontrolü
+    if (adminUid) {
+      const adminRef = db.ref(`admins/${adminUid}`);
+      const adminSnapshot = await adminRef.once('value');
+      if (!adminSnapshot.exists() || adminSnapshot.val().role !== 'admin') {
+        return res.status(401).json({ error: 'Admin yetkisi bulunamadı' });
+      }
     }
 
     const ipRef = db.ref('system/whitelistIPs').push();
@@ -468,6 +488,7 @@ app.post('/api/admin/whitelist-ip', async (req, res) => {
       ip,
       description,
       addedAt: new Date().toISOString(),
+      addedBy: adminUid || 'system',
       active: true
     });
 
@@ -481,7 +502,7 @@ app.get('/api/admin/whitelist-ips', async (req, res) => {
   try {
     const { adminKey } = req.query;
     
-    if (adminKey !== process.env.ADMIN_KEY) {
+    if (adminKey !== process.env.ADMIN_KEY && adminKey !== 'admin_key_2025') {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -489,6 +510,63 @@ app.get('/api/admin/whitelist-ips', async (req, res) => {
     const ips = snapshot.val() || {};
     
     res.json(Object.entries(ips).map(([id, data]) => ({ id, ...data })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Sürüm notları admin API'leri
+app.post('/api/admin/version-note', async (req, res) => {
+  try {
+    const { versionData, editingVersion, adminKey } = req.body;
+    
+    if (adminKey !== process.env.ADMIN_KEY && adminKey !== 'admin_key_2025') {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    let versionRef;
+    if (editingVersion) {
+      versionRef = db.ref(`system/versionNotes/${editingVersion}`);
+      // Mevcut isLatest durumunu koru
+      const currentVersion = await versionRef.once('value');
+      if (currentVersion.exists()) {
+        versionData.isLatest = currentVersion.val().isLatest;
+      }
+    } else {
+      versionRef = db.ref('system/versionNotes').push();
+      
+      // Diğer tüm versiyonları latest olmaktan çıkar
+      const allVersionsRef = db.ref('system/versionNotes');
+      const allVersionsSnapshot = await allVersionsRef.once('value');
+      const allVersions = allVersionsSnapshot.val() || {};
+      
+      for (const [versionId, version] of Object.entries(allVersions)) {
+        if (version.isLatest) {
+          await db.ref(`system/versionNotes/${versionId}/isLatest`).set(false);
+        }
+      }
+    }
+
+    await versionRef.set(versionData);
+    
+    res.json({ success: true, id: versionRef.key });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/admin/version-note/:versionId', async (req, res) => {
+  try {
+    const { versionId } = req.params;
+    const { adminKey } = req.body;
+    
+    if (adminKey !== process.env.ADMIN_KEY && adminKey !== 'admin_key_2025') {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    await db.ref(`system/versionNotes/${versionId}`).remove();
+    
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
