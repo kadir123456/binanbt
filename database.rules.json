@@ -1,0 +1,304 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        
+        "profile": {
+          ".validate": "newData.hasChildren(['email', 'createdAt'])",
+          "email": {
+            ".validate": "newData.isString() && newData.val().matches(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$/i)"
+          },
+          "createdAt": {
+            ".validate": "newData.isString()"
+          },
+          "lastLogin": {
+            ".validate": "newData.isString()"
+          }
+        },
+        
+        "apiKeys": {
+          ".validate": "newData.hasChildren(['apiKey', 'apiSecret', 'encrypted'])",
+          "apiKey": {
+            ".validate": "newData.isString() && newData.val().length > 10"
+          },
+          "apiSecret": {
+            ".validate": "newData.isString() && newData.val().length > 10"
+          },
+          "encrypted": {
+            ".validate": "newData.isBoolean() && newData.val() === true"
+          },
+          "updatedAt": {
+            ".validate": "newData.isString()"
+          }
+        },
+        
+        "settings": {
+          ".validate": "newData.hasChildren(['leverage', 'riskPercentage', 'tpPercentage', 'slPercentage', 'symbols', 'timeframe'])",
+          "leverage": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 125"
+          },
+          "riskPercentage": {
+            ".validate": "newData.isNumber() && newData.val() >= 0.1 && newData.val() <= 10"
+          },
+          "tpPercentage": {
+            ".validate": "newData.isNumber() && newData.val() >= 0.1 && newData.val() <= 20"
+          },
+          "slPercentage": {
+            ".validate": "newData.isNumber() && newData.val() >= 0.1 && newData.val() <= 10"
+          },
+          "symbols": {
+            ".validate": "newData.hasChildren()",
+            "$symbol": {
+              ".validate": "newData.isString() && newData.val().matches(/^[A-Z]+USDT$/)"
+            }
+          },
+          "timeframe": {
+            ".validate": "newData.isString() && newData.val().matches(/^(1m|3m|5m|15m|30m|1h|2h|4h|6h|8h|12h|1d|3d|1w|1M)$/)"
+          },
+          "updatedAt": {
+            ".validate": "newData.isString()"
+          }
+        },
+        
+        "botStatus": {
+          "isRunning": {
+            ".validate": "newData.isBoolean()"
+          },
+          "activePositions": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "lastUpdate": {
+            ".validate": "newData.isString()"
+          },
+          "error": {
+            ".validate": "newData.isString()"
+          },
+          "totalPnl": {
+            ".validate": "newData.isNumber()"
+          },
+          "dailyPnl": {
+            ".validate": "newData.isNumber()"
+          }
+        },
+        
+        "positions": {
+          "$positionId": {
+            ".validate": "newData.hasChildren(['symbol', 'side', 'size', 'entryPrice'])",
+            "id": {
+              ".validate": "newData.isString()"
+            },
+            "symbol": {
+              ".validate": "newData.isString() && newData.val().matches(/^[A-Z]+USDT$/)"
+            },
+            "side": {
+              ".validate": "newData.isString() && (newData.val() === 'LONG' || newData.val() === 'SHORT')"
+            },
+            "size": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "entryPrice": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "currentPrice": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "pnl": {
+              ".validate": "newData.isNumber()"
+            },
+            "tpPrice": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "slPrice": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "status": {
+              ".validate": "newData.isString() && (newData.val() === 'open' || newData.val() === 'closed' || newData.val() === 'cancelled')"
+            },
+            "timestamp": {
+              ".validate": "newData.isString()"
+            },
+            "updatedAt": {
+              ".validate": "newData.isString()"
+            }
+          }
+        },
+        
+        "activityLogs": {
+          "$logId": {
+            ".validate": "newData.hasChildren(['type', 'message', 'timestamp'])",
+            "type": {
+              ".validate": "newData.isString() && (newData.val() === 'info' || newData.val() === 'success' || newData.val() === 'warning' || newData.val() === 'error')"
+            },
+            "message": {
+              ".validate": "newData.isString() && newData.val().length <= 500"
+            },
+            "details": {
+              ".validate": "newData.isString()"
+            },
+            "symbol": {
+              ".validate": "newData.isString()"
+            },
+            "timestamp": {
+              ".validate": "newData.isString()"
+            }
+          }
+        },
+        
+        "tradeHistory": {
+          "$tradeId": {
+            ".validate": "newData.hasChildren(['symbol', 'side', 'type', 'timestamp'])",
+            "symbol": {
+              ".validate": "newData.isString() && newData.val().matches(/^[A-Z]+USDT$/)"
+            },
+            "side": {
+              ".validate": "newData.isString() && (newData.val() === 'LONG' || newData.val() === 'SHORT')"
+            },
+            "type": {
+              ".validate": "newData.isString() && (newData.val() === 'ENTRY' || newData.val() === 'EXIT' || newData.val() === 'TP' || newData.val() === 'SL')"
+            },
+            "size": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "price": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "pnl": {
+              ".validate": "newData.isNumber()"
+            },
+            "timestamp": {
+              ".validate": "newData.isString()"
+            }
+          }
+        }
+      }
+    },
+    
+    "admins": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).exists()",
+      ".write": false,
+      "$uid": {
+        ".validate": "newData.hasChildren(['role', 'addedAt'])",
+        "role": {
+          ".validate": "newData.isString() && newData.val() === 'admin'"
+        },
+        "email": {
+          ".validate": "newData.isString()"
+        },
+        "addedAt": {
+          ".validate": "newData.isString()"
+        },
+        "permissions": {
+          "manageAnnouncements": {
+            ".validate": "newData.isBoolean()"
+          },
+          "manageIPs": {
+            ".validate": "newData.isBoolean()"
+          },
+          "manageVersions": {
+            ".validate": "newData.isBoolean()"
+          },
+          "viewUsers": {
+            ".validate": "newData.isBoolean()"
+          }
+        }
+      }
+    },
+    
+    "system": {
+      ".read": true,
+      ".write": "auth != null && root.child('admins').child(auth.uid).exists()",
+      
+      "announcement": {
+        ".read": true,
+        "message": {
+          ".validate": "newData.isString() && newData.val().length <= 1000"
+        },
+        "timestamp": {
+          ".validate": "newData.isString()"
+        },
+        "active": {
+          ".validate": "newData.isBoolean()"
+        },
+        "priority": {
+          ".validate": "newData.isString() && (newData.val() === 'low' || newData.val() === 'medium' || newData.val() === 'high')"
+        },
+        "addedBy": {
+          ".validate": "newData.isString()"
+        }
+      },
+      
+      "versionNotes": {
+        ".read": true,
+        "$versionId": {
+          "version": {
+            ".validate": "newData.isString() && newData.val().matches(/^\\d+\\.\\d+\\.\\d+$/)"
+          },
+          "title": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "description": {
+            ".validate": "newData.isString() && newData.val().length <= 2000"
+          },
+          "features": {
+            "$featureId": {
+              ".validate": "newData.isString() && newData.val().length <= 200"
+            }
+          },
+          "fixes": {
+            "$fixId": {
+              ".validate": "newData.isString() && newData.val().length <= 200"
+            }
+          },
+          "releaseDate": {
+            ".validate": "newData.isString()"
+          },
+          "isLatest": {
+            ".validate": "newData.isBoolean()"
+          }
+        }
+      },
+      
+      "whitelistIPs": {
+        ".read": true,
+        "$ipId": {
+          "ip": {
+            ".validate": "newData.isString() && newData.val().matches(/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/)"
+          },
+          "description": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "addedAt": {
+            ".validate": "newData.isString()"
+          },
+          "addedBy": {
+            ".validate": "newData.isString()"
+          },
+          "active": {
+            ".validate": "newData.isBoolean()"
+          }
+        }
+      },
+      
+      "serverStatus": {
+        ".read": true,
+        "status": {
+          ".validate": "newData.isString() && (newData.val() === 'online' || newData.val() === 'offline' || newData.val() === 'maintenance')"
+        },
+        "lastUpdate": {
+          ".validate": "newData.isString()"
+        },
+        "activeUsers": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "version": {
+          ".validate": "newData.isString()"
+        }
+      }
+    }
+  }
+}

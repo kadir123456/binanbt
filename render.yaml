@@ -1,0 +1,62 @@
+services:
+  # Frontend (React App)
+  - type: web
+    name: binance-bot-frontend
+    env: static
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_FIREBASE_API_KEY
+        value: AIzaSyC6ENhmUrrtrN6HFbudthifGwUGSzWih7A
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        value: aviatoronline-6c2b4.firebaseapp.com
+      - key: VITE_FIREBASE_DATABASE_URL
+        value: https://aviatoronline-6c2b4-default-rtdb.firebaseio.com
+      - key: VITE_FIREBASE_PROJECT_ID
+        value: aviatoronline-6c2b4
+      - key: VITE_FIREBASE_STORAGE_BUCKET
+        value: aviatoronline-6c2b4.firebasestorage.app
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        value: "471392622297"
+      - key: VITE_FIREBASE_APP_ID
+        value: 1:471392622297:web:95dca8c181277d3526d0c8
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: binance-bot-backend
+          property: host
+
+  # Backend (Node.js Trading Bot)
+  - type: web
+    name: binance-bot-backend
+    env: node
+    region: frankfurt
+    plan: starter
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: FIREBASE_PROJECT_ID
+        value: aviatoronline-6c2b4
+      - key: FIREBASE_DATABASE_URL
+        value: https://aviatoronline-6c2b4-default-rtdb.firebaseio.com
+      - key: FIREBASE_PRIVATE_KEY_ID
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_CLIENT_ID
+        sync: false
+      - key: ADMIN_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: binance-bot-frontend
+          property: host
