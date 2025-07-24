@@ -22,6 +22,7 @@ const AdminPanel: React.FC = () => {
   const [newIPDescription, setNewIPDescription] = useState('');
   const [saveLoading, setSaveLoading] = useState(false);
   const { currentUser } = useAuth();
+  const [adminKey] = useState('admin_key_2025'); // Geçici admin key
 
   useEffect(() => {
     checkAdminAccess();
@@ -53,7 +54,13 @@ const AdminPanel: React.FC = () => {
 
   const loadWhitelistIPs = async () => {
     try {
-      const response = await fetch(`/api/admin/whitelist-ips?adminKey=${adminKey}`);
+      const response = await fetch(`/api/admin/whitelist-ips?adminKey=${adminKey}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
       if (response.ok) {
         const ips = await response.json();
         setWhitelistIPs(ips);
@@ -66,13 +73,31 @@ const AdminPanel: React.FC = () => {
   const handleAnnouncementSave = async () => {
     setSaveLoading(true);
     try {
-      const announcementRef = ref(database, 'system/announcement');
-      await announcementRef.set({
+      // Firebase kuralları yerine backend API kullan
+      const response = await fetch('/api/admin/announcement', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: announcement,
+          adminKey: adminKey,
+          adminUid: currentUser?.uid
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Duyuru kaydedilemedi');
+      }
+
+      /* Eski kod - Firebase kuralları ile çakışıyor
+      await set(ref(database, 'system/announcement'), {
         message: announcement,
         timestamp: new Date().toISOString(),
         active: announcement.trim().length > 0,
         addedBy: currentUser?.uid
       });
+      */
 
       alert('Duyuru başarıyla kaydedildi!');
     } catch (error) {
@@ -88,14 +113,23 @@ const AdminPanel: React.FC = () => {
 
     setSaveLoading(true);
     try {
-      const whitelistRef = ref(database, 'system/whitelistIPs').push();
-      await whitelistRef.set({
-        ip: newIP,
-        description: newIPDescription,
-        addedAt: new Date().toISOString(),
-        addedBy: currentUser?.uid,
-        active: true
+      // Backend API kullan
+      const response = await fetch('/api/admin/whitelist-ip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ip: newIP,
+          description: newIPDescription,
+          adminKey: adminKey,
+          adminUid: currentUser?.uid
+        })
       });
+
+      if (!response.ok) {
+        throw new Error('IP adresi eklenemedi');
+      }
 
       setNewIP('');
       setNewIPDescription('');
