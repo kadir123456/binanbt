@@ -15,10 +15,10 @@ interface VersionNote {
 }
 
 interface VersionNotesProps {
-  adminKey: string;
+  adminKey?: string;
 }
 
-const VersionNotes: React.FC<VersionNotesProps> = ({ adminKey }) => {
+const VersionNotes: React.FC<VersionNotesProps> = ({ adminKey = 'admin_key_2025' }) => {
   const [versions, setVersions] = useState<VersionNote[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -63,6 +63,32 @@ const VersionNotes: React.FC<VersionNotesProps> = ({ adminKey }) => {
 
     setLoading(true);
     try {
+      // Backend API kullan
+      const response = await fetch('/api/admin/version-note', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          versionData: {
+            version: formData.version,
+            title: formData.title,
+            description: formData.description,
+            features: formData.features.filter(f => f.trim()),
+            fixes: formData.fixes.filter(f => f.trim()),
+            releaseDate: new Date().toISOString(),
+            isLatest: true
+          },
+          editingVersion,
+          adminKey
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Sürüm notu kaydedilemedi');
+      }
+
+      /* Eski kod - Firebase kuralları ile çakışıyor
       const versionData = {
         version: formData.version,
         title: formData.title,
@@ -89,6 +115,7 @@ const VersionNotes: React.FC<VersionNotesProps> = ({ adminKey }) => {
       }
 
       await set(versionRef, versionData);
+      */
       
       setFormData({
         version: '',
@@ -126,7 +153,20 @@ const VersionNotes: React.FC<VersionNotesProps> = ({ adminKey }) => {
     if (!confirm('Bu sürüm notunu silmek istediğinizden emin misiniz?')) return;
 
     try {
-      await remove(ref(database, `system/versionNotes/${versionId}`));
+      const response = await fetch(`/api/admin/version-note/${versionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          adminKey
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Sürüm notu silinemedi');
+      }
+
       await loadVersions();
       alert('Sürüm notu silindi!');
     } catch (error) {
